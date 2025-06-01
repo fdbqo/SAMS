@@ -56,52 +56,6 @@ This microservice handles Steam OpenID login and issues both short-lived access 
 
 > **Optional**: If you plan to deploy on Vercel, install the [Vercel CLI](https://vercel.com/docs/cli).
 
----
-
-## Project Structure
-sams/
-├─ node_modules/
-├─ public/ # Static files (e.g. svg logos)
-├─ src/
-│ ├─ app/
-│ │ ├─ layout.tsx # Root App Router layout (no next/document)
-│ │ ├─ page.tsx # Documentation UI (optional)
-│ │ ├─ not-found.tsx # Custom 404
-│ │ └─ api/
-│ │ ├─ health/
-│ │ │ └─ route.ts # GET /api/health
-│ │ └─ auth/
-│ │ ├─ steam/
-│ │ │ └─ route.ts # GET /api/auth/steam?origin=…
-│ │ ├─ callback/
-│ │ │ └─ route.ts # GET /api/auth/callback?…
-│ │ ├─ verify/
-│ │ │ └─ route.ts # POST /api/auth/verify
-│ │ ├─ refresh/
-│ │ │ └─ route.ts # POST /api/auth/refresh
-│ │ └─ logout/
-│ │ └─ route.ts # POST /api/auth/logout (example)
-│ ├─ components/
-│ │ └─ ui/
-│ │ ├─ card.tsx # shadcn/ui Card components
-│ │ └─ badge.tsx # shadcn/ui Badge component
-│ └─ lib/
-│ ├─ env.ts # Zod-validated environment loader
-│ ├─ upstash.ts # Upstash Redis client wrapper
-│ ├─ steamClient.ts # Minimal Steam OpenID handshake
-│ └─ jwt.ts # Access + rotating refresh token logic
-├─ styles/ # Tailwind global CSS
-│ └─ globals.css
-├─ .env.example # Example environment variables
-├─ .gitignore
-├─ next.config.js
-├─ package.json
-├─ postcss.config.js
-├─ tailwind.config.js
-└─ tsconfig.json
-
----
-
 ## Environment Variables
 
 Create a file named `.env.local` in the project root and populate it with your own values:
@@ -118,19 +72,5 @@ JWT_SECRET=<a-very-long-random-secret>
 
 UPSTASH_REDIS_REST_URL=https://<your-upstash-instance>.upstash.io
 UPSTASH_REDIS_REST_TOKEN=<your-upstash-token>
-
-# Comma-separated list of allowed origins (where your apps run)
-ALLOWED_ORIGINS=http://localhost:3000
-
-STEAM_API_KEY: Get this from https://steamcommunity.com/dev/apikey
-
-AUTH_SERVICE_URL: The base URL of this microservice (e.g. http://localhost:3000 in dev)
-
-JWT_SECRET: At least 32 characters; used to sign/verify JWTs
-
-UPSTASH_REDIS_REST_URL: Your Upstash REST endpoint (found in Upstash dashboard)
-
-UPSTASH_REDIS_REST_TOKEN: Your Upstash REST token (keep it secret)
-
-ALLOWED_ORIGINS: Comma‐separated origins that the microservice will accept for ?origin= (e.g. your front‐end URLs)
+```
 
