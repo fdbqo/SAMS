@@ -1,36 +1,69 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Steam-Auth Microservice
 
-## Getting Started
+> A serverless Next.js 13 microservice (App Router + TypeScript) that provides Steam OpenID login for multiple downstream apps.  
+> Implements rotating refresh tokens with per-session IDs stored in Upstash Redis.
 
-First, run the development server:
+---
+
+## Table of Contents
+
+1. [Overview](#overview)  
+2. [Features](#features)  
+3. [Prerequisites](#prerequisites)  
+4. [Project Structure](#project-structure)  
+5. [Environment Variables](#environment-variables)  
+
+---
+
+## Overview
+
+This microservice handles Steam OpenID login and issues both short-lived access tokens and rotating 7-day refresh tokens for each user session. It is designed to work serverless (e.g. on Vercel) and to be shared by multiple downstream apps that need Steam authentication.
+
+- **Rotating Refresh Tokens**: Each login or refresh call uses a fresh `sessionId` and stores it in Redis under `refresh:<sessionId>`. Old sessions are revoked automatically to prevent replay attacks.  
+- **Multi-Session Support**: Users can log in from multiple devices or apps; each one holds its own `sessionId` so you can revoke individual sessions without affecting others.  
+- **Upstash Redis**: A serverless Redis database is used to track valid `sessionId` keys and optional metadata.
+
+---
+
+## Features
+
+- Steam OpenID 2.0 login (no Passport.js – minimal external deps)  
+- JWT‐based access tokens (15 minute TTL)  
+- Rotating JWT refresh tokens (7 day TTL) stored in Upstash Redis  
+- Per-session (per client/device) session ID for fine-grained revocation  
+- Secure, HttpOnly, SameSite=Lax cookies for tokens  
+- Built with Next.js 13 App Router (TypeScript)  
+- Tailwind CSS + shadcn/ui for optional documentation UI  
+
+---
+
+## Prerequisites
+
+1. **Node.js** v18 or newer  
+2. **npm** (or yarn/pnpm)  
+3. **Upstash Redis** account (free tier is fine)  
+4. **Steam API Key** (register at https://steamcommunity.com/dev/apikey)  
+5. **Steam Developer Console**: register the domain and return URL  
+   - **Domain Name**: `localhost` (for local testing)  
+   - **Return URL**: `http://localhost:3000/api/auth/callback`  
+
+> **Optional**: If you plan to deploy on Vercel, install the [Vercel CLI](https://vercel.com/docs/cli).
+
+## Environment Variables
+
+Create a file named `.env.local` in the project root and populate it with your own values:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# .env.local
+NODE_ENV=development
+
+STEAM_API_KEY=<your-steam-api-key>
+AUTH_SERVICE_URL=http://localhost:3000
+
+# Must be ≥ 32 chars
+JWT_SECRET=<a-very-long-random-secret>
+
+UPSTASH_REDIS_REST_URL=https://<your-upstash-instance>.upstash.io
+UPSTASH_REDIS_REST_TOKEN=<your-upstash-token>
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
