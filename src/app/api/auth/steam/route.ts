@@ -9,8 +9,13 @@ import { SteamClient } from "@/lib/steamClient";
 const ENV = getEnv();
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const origin = searchParams.get("origin") || "";
+  const rawOrigin = request.nextUrl.searchParams.get("origin") || "";
+  let origin: string;
+  try {
+    origin = new URL(rawOrigin).origin;
+  } catch {
+    return NextResponse.json({ error: "Invalid origin format" }, { status: 400 });
+  }
 
   if (!ENV.ALLOWED_ORIGINS.includes(origin)) {
     return NextResponse.json({ error: "Origin not allowed" }, { status: 400 });
