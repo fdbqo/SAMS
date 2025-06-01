@@ -12,13 +12,6 @@
 3. [Prerequisites](#prerequisites)  
 4. [Project Structure](#project-structure)  
 5. [Environment Variables](#environment-variables)  
-6. [Getting Started (Local)](#getting-started-local)  
-   - [Install & Run](#install--run)  
-   - [Testing Endpoints](#testing-endpoints)  
-7. [Deploying to Vercel](#deploying-to-vercel)  
-8. [Authentication Flow](#authentication-flow)  
-9. [Session & Token Rotation](#session--token-rotation)  
-10. [License](#license)  
 
 ---
 
