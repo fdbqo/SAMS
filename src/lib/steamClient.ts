@@ -13,8 +13,6 @@ export class SteamClient {
       "openid.realm": ENV.AUTH_SERVICE_URL,
       "openid.identity": "http://specs.openid.net/auth/2.0/identifier_select",
       "openid.claimed_id": "http://specs.openid.net/auth/2.0/identifier_select",
-      "openid.ns.sreg": "http://openid.net/extensions/sreg/1.1",
-      "openid.sreg.required": "nickname",
     });
     return `https://steamcommunity.com/openid/login?${params.toString()}`;
   }
@@ -27,9 +25,7 @@ export class SteamClient {
     }
 
     const verifyParams = new URLSearchParams();
-    Object.entries(query).forEach(([k, v]) => {
-      verifyParams.set(k, v);
-    });
+    Object.entries(query).forEach(([k, v]) => verifyParams.set(k, v));
     verifyParams.set("openid.mode", "check_authentication");
 
     const res = await fetch("https://steamcommunity.com/openid/login", {

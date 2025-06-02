@@ -12,19 +12,34 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const state = searchParams.get("state") || "";
 
-    if (!state) {
-      return new NextResponse("Missing state", { status: 400, headers: { "Content-Type": "text/plain" } });
+    const raw = await redis.get(`steam:state:${state}`);
+    if (!raw) {
+      return new NextResponse("Invalid or expired state", { status: 400 });
     }
 
-    const originRaw = await redis.get(`steam:state:${state}`);
-    const origin = typeof originRaw === "string" ? originRaw : "";
-    if (!origin || !ENV.ALLOWED_ORIGINS.includes(origin)) {
-      return new NextResponse("Invalid or expired state", { status: 400, headers: { "Content-Type": "text/plain" } });
+    let origin: string;
+    let redirectTo: string;
+
+    if (typeof raw === "string") {
+      const obj = JSON.parse(raw);
+      origin = obj.origin;
+      redirectTo = obj.redirectTo;
+    } else {
+      origin = (raw as any).origin;
+      redirectTo = (raw as any).redirectTo;
     }
+
+    if (!ENV.ALLOWED_ORIGINS.includes(origin)) {
+      return new NextResponse("Origin not allowed", { status: 400 });
+    }
+
     await redis.del(`steam:state:${state}`);
 
     const queryObj: Record<string, string> = {};
-    for (const [k, v] of searchParams.entries()) queryObj[k] = v;
+    for (const [k, v] of searchParams.entries()) {
+      queryObj[k] = v;
+    }
+
     const { steamId } = await SteamClient.verifyCallback(queryObj);
 
     const { accessToken, accessExp, refreshToken, refreshExp } = await issueTokens(
@@ -35,7 +50,7 @@ export async function GET(request: NextRequest) {
     const accessMaxAgeSec = accessExp - now;
     const refreshMaxAgeSec = refreshExp - now;
 
-    const response = NextResponse.redirect(origin);
+    const response = NextResponse.redirect(origin + redirectTo);
     response.cookies.set({
       name: "steam_access",
       value: accessToken,
@@ -58,6 +73,6 @@ export async function GET(request: NextRequest) {
     return response;
   } catch (err: any) {
     console.error("Callback error:", err);
-    return new NextResponse("Authentication failed", { status: 500, headers: { "Content-Type": "text/plain" } });
+    return new NextResponse("Authentication failed", { status: 500 });
   }
 }

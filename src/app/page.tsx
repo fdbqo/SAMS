@@ -13,31 +13,45 @@ export default function HomePage() {
   const endpoints = [
     {
       method: "GET",
-      path: "/api/auth/steam?origin={YOUR_APP_URL}",
+      path: "/api/auth/steam?origin={ORIGIN}&redirectTo={PATH}",
       description:
-        "Begins the Steam OpenID login flow. Provide your front-end’s `origin` as a query parameter. Redirects to Steam’s login.",
-      params: ["origin (required)"],
+        "Begin Steam login flow. Provide your front-end’s origin + path (redirectTo).",
+      params: ["origin", "redirectTo (optional)"],
     },
     {
       method: "GET",
       path: "/api/auth/callback?state={STATE}&openid.*",
       description:
-        "Steam’s callback URL. Verifies OpenID response, issues access + refresh tokens, sets cookies, and redirects back to the stored origin.",
-      params: ["state (required)", "openid.* parameters from Steam"],
+        "Steam callback endpoint. Verifies OpenID, issues tokens, and redirects to origin+redirectTo.",
+      params: ["state", "openid.* from Steam"],
     },
     {
       method: "POST",
       path: "/api/auth/verify",
       description:
-        "Verifies a given access token. Accepts JSON `{ token: string }`. Returns `{ valid: true, user: { steamId } }` or `401` if invalid.",
+        "Verify an access token. Body: { token: string }. Returns { valid: true, user: { steamId } }. 401 if invalid.",
       params: ["token (in JSON body)"],
     },
     {
       method: "POST",
       path: "/api/auth/refresh",
       description:
-        "Rotates tokens using the `steam_refresh` cookie. Issues new access + refresh tokens, sets cookies. Returns `{ success: true }` or `401` if refresh is invalid.",
-      params: ["steam_refresh cookie (automatically sent)"],
+        "Rotate tokens using the refresh cookie. Issues new tokens. 401 if refresh invalid. Rate-limited.",
+      params: ["steam_refresh cookie (auto)"],
+    },
+    {
+      method: "POST",
+      path: "/api/auth/logout",
+      description:
+        "Logout current session: revokes the refresh session and clears cookies. Returns { success: true }. ",
+      params: ["steam_refresh cookie (auto)"],
+    },
+    {
+      method: "GET",
+      path: "/api/auth/me",
+      description:
+        "Retrieve current user’s Steam profile (steam_access cookie auto). Returns { steamId, displayName, avatarUrl, profileUrl } or 401.",
+      params: ["steam_access cookie (auto)"],
     },
   ];
 
@@ -45,9 +59,7 @@ export default function HomePage() {
     <main className="container mx-auto p-6">
       <h1 className="text-3xl font-bold mb-4">Steam-Auth Microservice</h1>
       <p className="text-gray-700 mb-8">
-        This service handles Steam OpenID login, issues access & refresh tokens,
-        and provides verification/refresh endpoints. Use these endpoints in your
-        Next.js or React apps to authenticate via Steam.
+        Use these endpoints in your Next.js or React apps to authenticate via Steam.
       </p>
 
       <div className="space-y-6">

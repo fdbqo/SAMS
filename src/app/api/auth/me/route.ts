@@ -1,4 +1,3 @@
-// src/app/api/auth/me/route.ts
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { verifyAccess } from "@/lib/jwt";
@@ -16,7 +15,6 @@ export async function GET(request: NextRequest) {
     const payload = verifyAccess(accessToken);
     const steamId = payload.steamId;
 
-    // Fetch profile from Steam Web API
     const res = await fetch(
       `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${ENV.STEAM_API_KEY}&steamids=${steamId}`
     );
