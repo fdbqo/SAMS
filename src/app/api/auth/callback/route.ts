@@ -55,8 +55,8 @@ export async function GET(request: NextRequest) {
       name: "steam_access",
       value: accessToken,
       httpOnly: true,
-      secure: ENV.NODE_ENV === "production",
-      sameSite: "lax",
+      secure: true,
+      sameSite: "none",
       path: "/",
       maxAge: accessMaxAgeSec,
     });
@@ -64,8 +64,8 @@ export async function GET(request: NextRequest) {
       name: "steam_refresh",
       value: refreshToken,
       httpOnly: true,
-      secure: ENV.NODE_ENV === "production",
-      sameSite: "lax",
+      secure: true,
+      sameSite: "none",
       path: "/",
       maxAge: refreshMaxAgeSec,
     });
