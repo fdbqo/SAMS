@@ -7,6 +7,8 @@ import { withCORS } from "@/lib/withCors";
 const ENV = getEnv();
 
 const handler = async (request: NextRequest) => {
+
+
   try {
     const accessToken = request.cookies.get("steam_access")?.value;
     if (!accessToken) {
@@ -15,6 +17,7 @@ const handler = async (request: NextRequest) => {
 
     const payload = verifyAccess(accessToken);
     const steamId = payload.steamId;
+
 
     const res = await fetch(
       `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${ENV.STEAM_API_KEY}&steamids=${steamId}`

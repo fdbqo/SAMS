@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { verifyRefresh, revokeSession } from "@/lib/jwt";
+import { withCORS } from "@/lib/withCors";
 
-export async function POST(request: NextRequest) {
+const handler = async (request: NextRequest) => {
   const refreshToken = request.cookies.get("steam_refresh")?.value;
   if (refreshToken) {
     try {
@@ -19,7 +20,8 @@ export async function POST(request: NextRequest) {
     maxAge: 0,
     path: "/",
     httpOnly: true,
-    sameSite: "lax",
+    secure: true,
+    sameSite: "none",
   });
   response.cookies.set({
     name: "steam_refresh",
@@ -27,8 +29,12 @@ export async function POST(request: NextRequest) {
     maxAge: 0,
     path: "/",
     httpOnly: true,
-    sameSite: "lax",
+    secure: true,
+    sameSite: "none",
   });
 
   return response;
-}
+};
+
+export const POST = withCORS(handler);
+export const OPTIONS = withCORS(() => new NextResponse(null, { status: 204 }));
