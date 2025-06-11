@@ -1,13 +1,13 @@
-// src/app/api/auth/refresh/route.ts
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { verifyRefresh, issueTokens, revokeSession } from "@/lib/jwt";
 import { getEnv } from "@/lib/env";
 import { rateLimit } from "@/lib/rateLimiter";
+import { withCORS } from "@/lib/withCors";
 
 const ENV = getEnv();
 
-export async function POST(request: NextRequest) {
+const handler = async (request: NextRequest) => {
   const ip =
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
     request.headers.get("x-real-ip")?.trim() ||
@@ -61,4 +61,7 @@ export async function POST(request: NextRequest) {
     console.error("Refresh error:", err);
     return NextResponse.json({ error: err.message }, { status: 401 });
   }
-}
+};
+
+export const POST = withCORS(handler);
+export const OPTIONS = withCORS(() => new NextResponse(null, { status: 204 }));

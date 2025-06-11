@@ -30,3 +30,4 @@ export function withCORS(
     return res;
   };
 }
+
