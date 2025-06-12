@@ -44,10 +44,12 @@ export async function GET(request: NextRequest) {
 
     const { accessToken, refreshToken } = await issueTokens(steamId);
 
+    // Always redirect to /api/auth/set-cookies on the frontend, passing tokens and final destination
     const redirectUrl =
-      `${origin}${redirectTo}` +
+      `${origin}/api/auth/set-cookies` +
       `?access=${encodeURIComponent(accessToken)}` +
-      `&refresh=${encodeURIComponent(refreshToken)}`;
+      `&refresh=${encodeURIComponent(refreshToken)}` +
+      `&redirectTo=${encodeURIComponent(redirectTo)}`;
 
     return NextResponse.redirect(redirectUrl);
   } catch (err: any) {
