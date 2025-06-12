@@ -42,35 +42,14 @@ export async function GET(request: NextRequest) {
 
     const { steamId } = await SteamClient.verifyCallback(queryObj);
 
-    const { accessToken, accessExp, refreshToken, refreshExp } = await issueTokens(
-      steamId
-    );
+    const { accessToken, refreshToken } = await issueTokens(steamId);
 
-    const now = Math.floor(Date.now() / 1000);
-    const accessMaxAgeSec = accessExp - now;
-    const refreshMaxAgeSec = refreshExp - now;
+    const redirectUrl =
+      `${origin}${redirectTo}` +
+      `?access=${encodeURIComponent(accessToken)}` +
+      `&refresh=${encodeURIComponent(refreshToken)}`;
 
-    const response = NextResponse.redirect(origin + redirectTo);
-    response.cookies.set({
-      name: "steam_access",
-      value: accessToken,
-      httpOnly: true,
-      secure: true,
-      sameSite: "none",
-      path: "/",
-      maxAge: accessMaxAgeSec,
-    });
-    response.cookies.set({
-      name: "steam_refresh",
-      value: refreshToken,
-      httpOnly: true,
-      secure: true,
-      sameSite: "none",
-      path: "/",
-      maxAge: refreshMaxAgeSec,
-    });
-
-    return response;
+    return NextResponse.redirect(redirectUrl);
   } catch (err: any) {
     console.error("Callback error:", err);
     return new NextResponse("Authentication failed", { status: 500 });
