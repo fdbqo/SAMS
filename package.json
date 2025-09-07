@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "build:sdk": "cd packages/sams-client && npm run build",
+    "dev:sdk": "cd packages/sams-client && npm run dev",
+    "build:all": "npm run build:sdk && npm run build"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.3",

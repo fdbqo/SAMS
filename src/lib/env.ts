@@ -1,21 +1,11 @@
-import { z } from "zod";
-
-const _env = z.object({
-  NODE_ENV: z.enum(["development", "production"]).default("development"),
-
-  STEAM_API_KEY: z.string().nonempty(),
-  AUTH_SERVICE_URL: z.string().url(),
-  JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters"),
-
-  UPSTASH_REDIS_REST_URL: z.string().url(),
-  UPSTASH_REDIS_REST_TOKEN: z.string().nonempty(),
-
-  ALLOWED_ORIGINS: z
-    .string()
-    .nonempty()
-    .transform((val) => val.split(",").map((s) => s.trim()).filter(Boolean)),
-});
-
-export function getEnv() {
-  return _env.parse(process.env);
-}
+// Simple environment variable access - no validation at module load
+export const ENV = {
+  NODE_ENV: process.env.NODE_ENV || 'development',
+  STEAM_API_KEY: process.env.STEAM_API_KEY || '',
+  AUTH_SERVICE_URL: process.env.AUTH_SERVICE_URL || '',
+  JWT_SECRET: process.env.JWT_SECRET || '',
+  UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL || '',
+  UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN || '',
+  ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS ? 
+    process.env.ALLOWED_ORIGINS.split(",").map((s) => s.trim()).filter(Boolean) : [],
+};

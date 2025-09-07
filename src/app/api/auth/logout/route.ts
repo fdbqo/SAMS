@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { verifyRefresh, revokeSession } from "@/lib/jwt";
 import { withCORS } from "@/lib/withCors";
+import { ENV } from "@/lib/env";
 
 const handler = async (request: NextRequest) => {
   const refreshToken = request.cookies.get("steam_refresh")?.value;
@@ -20,8 +21,8 @@ const handler = async (request: NextRequest) => {
     maxAge: 0,
     path: "/",
     httpOnly: true,
-    secure: true,
-    sameSite: "none",
+    secure: ENV.NODE_ENV === "production",
+    sameSite: "lax",
   });
   response.cookies.set({
     name: "steam_refresh",
@@ -29,8 +30,8 @@ const handler = async (request: NextRequest) => {
     maxAge: 0,
     path: "/",
     httpOnly: true,
-    secure: true,
-    sameSite: "none",
+    secure: ENV.NODE_ENV === "production",
+    sameSite: "lax",
   });
 
   return response;

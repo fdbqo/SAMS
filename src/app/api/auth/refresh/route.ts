@@ -1,11 +1,9 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { verifyRefresh, issueTokens, revokeSession } from "@/lib/jwt";
-import { getEnv } from "@/lib/env";
+import { ENV } from "@/lib/env";
 import { rateLimit } from "@/lib/rateLimiter";
 import { withCORS } from "@/lib/withCors";
-
-const ENV = getEnv();
 
 const handler = async (request: NextRequest) => {
   const ip =
@@ -41,8 +39,8 @@ const handler = async (request: NextRequest) => {
       name: "steam_access",
       value: accessToken,
       httpOnly: true,
-      secure: true,
-      sameSite: "none",
+      secure: ENV.NODE_ENV === "production",
+      sameSite: "lax",
       path: "/",
       maxAge: accessMaxAgeSec,
     });
@@ -50,8 +48,8 @@ const handler = async (request: NextRequest) => {
       name: "steam_refresh",
       value: newRefresh,
       httpOnly: true,
-      secure: true,
-      sameSite: "none",
+      secure: ENV.NODE_ENV === "production",
+      sameSite: "lax",
       path: "/",
       maxAge: refreshMaxAgeSec,
     });

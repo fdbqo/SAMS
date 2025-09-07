@@ -1,9 +1,7 @@
 import jwt from "jsonwebtoken";
 import { randomUUID } from "crypto";
 import { redis } from "@/lib/upstash";
-import { getEnv } from "@/lib/env";
-
-const ENV = getEnv();
+import { ENV } from "@/lib/env";
 
 export interface AccessPayload {
   steamId: string;

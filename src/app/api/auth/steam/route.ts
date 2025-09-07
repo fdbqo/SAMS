@@ -1,14 +1,12 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { randomBytes } from "crypto";
-import { getEnv } from "@/lib/env";
 import { redis } from "@/lib/upstash";
 import { SteamClient } from "@/lib/steamClient";
 import { rateLimit } from "@/lib/rateLimiter";
+import { withCORS } from "@/lib/withCors";
 
-const ENV = getEnv();
-
-export async function GET(request: NextRequest) {
+const handler = async (request: NextRequest) => {
   const ip =
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
     "unknown";
@@ -33,9 +31,14 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  if (!ENV.ALLOWED_ORIGINS.includes(origin)) {
+  // Check if origin is allowed (from Redis)
+  const allowedOrigins = await redis.smembers("allowed_origins");
+  if (!allowedOrigins.includes(origin)) {
     return NextResponse.json({ error: "Origin not allowed" }, { status: 400 });
   }
+
+  // Update last used timestamp for this origin
+  await redis.set(`origin:${origin}:last_used`, new Date().toISOString());
 
   const state = randomBytes(16).toString("hex");
   await redis.set(
@@ -46,4 +49,7 @@ export async function GET(request: NextRequest) {
 
   const steamUrl = SteamClient.steamAuthUrl(state);
   return NextResponse.redirect(steamUrl);
-}
+};
+
+export const GET = withCORS(handler);
+export const OPTIONS = withCORS(() => new NextResponse(null, { status: 204 }));

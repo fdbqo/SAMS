@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { verifyAccess } from "@/lib/jwt";
+import { withCORS } from "@/lib/withCors";
 
-export async function POST(request: NextRequest) {
+const handler = async (request: NextRequest) => {
   try {
     const { token } = (await request.json()) as { token?: string };
     if (!token) {
@@ -13,4 +14,7 @@ export async function POST(request: NextRequest) {
   } catch {
     return NextResponse.json({ valid: false }, { status: 401 });
   }
-}
+};
+
+export const POST = withCORS(handler);
+export const OPTIONS = withCORS(() => new NextResponse(null, { status: 204 }));

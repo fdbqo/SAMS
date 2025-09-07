@@ -1,13 +1,11 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { getEnv } from "@/lib/env";
 import { redis } from "@/lib/upstash";
 import { SteamClient } from "@/lib/steamClient";
 import { issueTokens } from "@/lib/jwt";
+import { withCORS } from "@/lib/withCors";
 
-const ENV = getEnv();
-
-export async function GET(request: NextRequest) {
+const handler = async (request: NextRequest) => {
   try {
     const { searchParams } = new URL(request.url);
     const state = searchParams.get("state") || "";
@@ -29,7 +27,9 @@ export async function GET(request: NextRequest) {
       redirectTo = (raw as any).redirectTo;
     }
 
-    if (!ENV.ALLOWED_ORIGINS.includes(origin)) {
+    // Double-check origin is still allowed (from Redis)
+    const allowedOrigins = await redis.smembers("allowed_origins");
+    if (!allowedOrigins.includes(origin)) {
       return new NextResponse("Origin not allowed", { status: 400 });
     }
 
@@ -56,4 +56,7 @@ export async function GET(request: NextRequest) {
     console.error("Callback error:", err);
     return new NextResponse("Authentication failed", { status: 500 });
   }
-}
+};
+
+export const GET = withCORS(handler);
+export const OPTIONS = withCORS(() => new NextResponse(null, { status: 204 }));

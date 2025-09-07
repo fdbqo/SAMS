@@ -1,6 +1,4 @@
-import { getEnv } from "@/lib/env";
-
-const ENV = getEnv();
+import { ENV } from "@/lib/env";
 
 export class SteamClient {
   static steamAuthUrl(state: string): string {

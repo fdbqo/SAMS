@@ -13,6 +13,9 @@
 # testing
 /coverage
 
+# SDK build artifacts
+/packages/sams-client/dist
+
 # next.js
 /.next/
 /out/
