@@ -54,7 +54,7 @@ export class AdminAuth {
       }
       
       // Check if it's the old plain text format (for migration)
-      if (!storedPassword.includes(':')) {
+      if (typeof storedPassword === 'string' && !storedPassword.includes(':')) {
         // This is a plain text password, migrate it
         console.warn("Migrating plain text admin password to hashed format");
         await this.setPassword(password);
@@ -62,7 +62,15 @@ export class AdminAuth {
       }
       
       // Verify hashed password
+      if (typeof storedPassword !== 'string') {
+        return false;
+      }
+      
       const [saltHex, hashHex] = storedPassword.split(':');
+      if (!saltHex || !hashHex) {
+        return false;
+      }
+      
       const salt = Buffer.from(saltHex, 'hex');
       const hash = Buffer.from(hashHex, 'hex');
       
