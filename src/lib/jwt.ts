@@ -111,7 +111,14 @@ export async function validateSession(sessionId: string): Promise<{ valid: boole
       return { valid: false };
     }
 
-    const sessionData = JSON.parse(sessionDataRaw as string);
+    // Handle both string and object responses from Redis
+    let sessionData;
+    if (typeof sessionDataRaw === 'string') {
+      sessionData = JSON.parse(sessionDataRaw);
+    } else {
+      sessionData = sessionDataRaw;
+    }
+
     const now = Math.floor(Date.now() / 1000);
 
     if (sessionData.expiresAt < now) {
