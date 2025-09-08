@@ -101,10 +101,19 @@ function LoginPage() {
 ```
 
 **That's it!** No additional setup required. The SDK automatically handles:
-- ✅ Authentication cookies
-- ✅ Token refresh
-- ✅ Session management
-- ✅ Cross-domain security
+- ✅ Session-based authentication
+- ✅ User data retrieval
+- ✅ Cross-domain compatibility
+- ✅ Secure session management
+
+## How It Works
+
+1. **User logs in** → Redirects to SAMS for Steam authentication
+2. **SAMS creates session** → Stores session data in Redis
+3. **SAMS redirects back** → With session ID in URL hash
+4. **App gets user data** → Calls SAMS API with session ID
+5. **App stores user data** → In your own database
+6. **SAMS manages sessions** → Handles login/logout/validation
 
 ### Vanilla JavaScript
 ```html

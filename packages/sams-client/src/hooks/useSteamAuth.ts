@@ -11,23 +11,42 @@ export function useSteamAuth() {
   const checkAuth = useCallback(async () => {
     try {
       setError(null);
+      console.log("[client] Checking authentication...");
+      console.log("[client] SAMS URL:", config.samsUrl);
       
-      // Try to get access token from cookies first
-      const accessToken = getCookie('sams_access_token');
+      // Check for session ID in URL hash
+      const hash = window.location.hash.substring(1);
+      const hashParams = new URLSearchParams(hash);
+      const sessionId = hashParams.get('sessionId');
       
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json'
-      };
-
-      // If we have an access token, use it for authorization
-      if (accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`;
+      if (sessionId) {
+        console.log("[client] Session callback detected, storing session ID");
+        // Store session ID in localStorage
+        localStorage.setItem('sams_session_id', sessionId);
+        
+        // Clear hash from URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+      
+      // Try to get session ID from localStorage
+      const storedSessionId = localStorage.getItem('sams_session_id');
+      console.log("[client] Session ID found:", storedSessionId ? "Yes" : "No");
+      
+      if (!storedSessionId) {
+        console.log("[client] No session ID available");
+        setUser(null);
+        return;
       }
 
-      const response = await fetch(`${config.samsUrl}/api/auth/me`, {
+      console.log("[client] Making request to /api/auth/user");
+      const response = await fetch(`${config.samsUrl}/api/auth/user?sessionId=${encodeURIComponent(storedSessionId)}`, {
         credentials: 'include',
-        headers
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
+      
+      console.log("[client] Response status:", response.status);
 
       if (response.ok) {
         const userData = await response.json();
@@ -73,14 +92,26 @@ export function useSteamAuth() {
   const logout = useCallback(async () => {
     try {
       setError(null);
-      await fetch(`${config.samsUrl}/api/auth/logout`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
+      
+      // Get session ID before clearing it
+      const sessionId = localStorage.getItem('sams_session_id');
+      
+      // Clear local session
+      localStorage.removeItem('sams_session_id');
       setUser(null);
+      
+      // Call SAMS logout endpoint (optional - for server-side cleanup)
+      if (sessionId) {
+        await fetch(`${config.samsUrl}/api/auth/logout`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ sessionId })
+        });
+      }
+      
       if (config.onLogout) {
         config.onLogout();
       }

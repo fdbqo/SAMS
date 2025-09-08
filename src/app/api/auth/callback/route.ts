@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { redis } from "@/lib/upstash";
 import { SteamClient } from "@/lib/steamClient";
-import { issueTokens } from "@/lib/jwt";
+import { createSession } from "@/lib/jwt";
 import { withCORS } from "@/lib/withCors";
 
 const handler = async (request: NextRequest) => {
@@ -42,28 +42,16 @@ const handler = async (request: NextRequest) => {
 
     const { steamId } = await SteamClient.verifyCallback(queryObj);
 
-    const { accessToken, refreshToken } = await issueTokens(steamId);
+    // Create session instead of tokens
+    const { sessionId, expiresAt } = await createSession(steamId);
+    console.log("[callback] Session created for Steam ID:", steamId);
+    console.log("[callback] Session ID:", sessionId);
+    console.log("[callback] Expires at:", new Date(expiresAt * 1000).toISOString());
 
-    // Set cookies directly and redirect to the app
-    const response = NextResponse.redirect(`${origin}${redirectTo}`);
-
-    // Set cookies without domain restriction (will be set for SAMS domain)
-    response.cookies.set('sams_access_token', accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 15 * 60, // 15 minutes
-      path: '/',
-    });
-
-    response.cookies.set('sams_refresh_token', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60, // 7 days
-      path: '/',
-    });
-
+    // Redirect with session ID in hash (client-side only)
+    const redirectUrl = `${origin}${redirectTo}#sessionId=${encodeURIComponent(sessionId)}`;
+    console.log("[callback] Redirecting with session ID in hash");
+    const response = NextResponse.redirect(redirectUrl);
     return response;
   } catch (err: any) {
     console.error("Callback error:", err);

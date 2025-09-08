@@ -3,6 +3,13 @@ export interface SteamUser {
   displayName: string;
   avatarUrl: string;
   profileUrl: string;
+  sessionId?: string;
+  sessionData?: {
+    clientApp?: string;
+    createdAt: number;
+    expiresAt: number;
+    lastAccessed: number;
+  };
 }
 
 export interface SamsConfig {

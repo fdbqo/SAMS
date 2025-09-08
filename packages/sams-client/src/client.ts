@@ -25,21 +25,18 @@ export class SamsClient {
    */
   async getUser(): Promise<SteamUser | null> {
     try {
-      // Try to get access token from cookies first
-      const accessToken = this.getCookie('sams_access_token');
+      // Try to get session ID from localStorage
+      const sessionId = localStorage.getItem('sams_session_id');
       
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json'
-      };
-
-      // If we have an access token, use it for authorization
-      if (accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`;
+      if (!sessionId) {
+        return null;
       }
 
-      const response = await fetch(`${this.config.samsUrl}/api/auth/me`, {
+      const response = await fetch(`${this.config.samsUrl}/api/auth/user?sessionId=${encodeURIComponent(sessionId)}`, {
         credentials: 'include',
-        headers
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
 
       if (response.ok) {
@@ -54,32 +51,29 @@ export class SamsClient {
     }
   }
 
-  /**
-   * Get cookie value by name
-   */
-  private getCookie(name: string): string | null {
-    if (typeof document === 'undefined') return null;
-    
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) {
-      return parts.pop()?.split(';').shift() || null;
-    }
-    return null;
-  }
 
   /**
    * Logout user by calling SAMS logout endpoint
    */
   async logout(): Promise<void> {
     try {
-      await fetch(`${this.config.samsUrl}/api/auth/logout`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
+      // Get session ID before clearing it
+      const sessionId = localStorage.getItem('sams_session_id');
+      
+      // Clear local session
+      localStorage.removeItem('sams_session_id');
+      
+      // Call SAMS logout endpoint for server-side cleanup
+      if (sessionId) {
+        await fetch(`${this.config.samsUrl}/api/auth/logout`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ sessionId })
+        });
+      }
     } catch (error) {
       this.handleError(error as Error, 'LOGOUT_ERROR');
     }
