@@ -19,7 +19,7 @@ const handler = async (request: NextRequest) => {
   }
 
   try {
-    const refreshToken = request.cookies.get("steam_refresh")?.value;
+    const refreshToken = request.cookies.get("sams_refresh_token")?.value;
     if (!refreshToken) {
       return NextResponse.json({ error: "Missing refresh token" }, { status: 401 });
     }
@@ -36,7 +36,7 @@ const handler = async (request: NextRequest) => {
 
     const response = NextResponse.json({ success: true });
     response.cookies.set({
-      name: "steam_access",
+      name: "sams_access_token",
       value: accessToken,
       httpOnly: true,
       secure: ENV.NODE_ENV === "production",
@@ -45,7 +45,7 @@ const handler = async (request: NextRequest) => {
       maxAge: accessMaxAgeSec,
     });
     response.cookies.set({
-      name: "steam_refresh",
+      name: "sams_refresh_token",
       value: newRefresh,
       httpOnly: true,
       secure: ENV.NODE_ENV === "production",

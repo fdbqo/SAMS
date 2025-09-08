@@ -6,7 +6,16 @@ import { withCORS } from "@/lib/withCors";
 
 const handler = async (request: NextRequest) => {
   try {
-    const accessToken = request.cookies.get("sams_access_token")?.value;
+    // Try to get token from cookies first, then from Authorization header
+    let accessToken = request.cookies.get("sams_access_token")?.value;
+    
+    if (!accessToken) {
+      const authHeader = request.headers.get("authorization");
+      if (authHeader && authHeader.startsWith("Bearer ")) {
+        accessToken = authHeader.substring(7);
+      }
+    }
+    
     if (!accessToken) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
