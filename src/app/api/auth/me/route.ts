@@ -6,7 +6,7 @@ import { withCORS } from "@/lib/withCors";
 
 const handler = async (request: NextRequest) => {
   try {
-    const accessToken = request.cookies.get("steam_access")?.value;
+    const accessToken = request.cookies.get("sams_access_token")?.value;
     if (!accessToken) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
