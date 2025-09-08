@@ -93,23 +93,28 @@ export function useSteamAuth() {
     try {
       setError(null);
       
-      // Get session ID before clearing it
+      // Get session ID before clearing it (with null check)
       const sessionId = localStorage.getItem('sams_session_id');
       
-      // Clear local session
+      // Clear local session first to prevent race conditions
       localStorage.removeItem('sams_session_id');
       setUser(null);
       
       // Call SAMS logout endpoint (optional - for server-side cleanup)
       if (sessionId) {
-        await fetch(`${config.samsUrl}/api/auth/logout`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ sessionId })
-        });
+        try {
+          await fetch(`${config.samsUrl}/api/auth/logout`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ sessionId })
+          });
+        } catch (fetchError) {
+          // Don't fail logout if server call fails - local cleanup is more important
+          console.warn('Server logout call failed:', fetchError);
+        }
       }
       
       if (config.onLogout) {
@@ -129,18 +134,6 @@ export function useSteamAuth() {
     setLoading(true);
     checkAuth();
   }, [checkAuth]);
-
-  // Helper function to get cookie value
-  const getCookie = (name: string): string | null => {
-    if (typeof document === 'undefined') return null;
-    
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) {
-      return parts.pop()?.split(';').shift() || null;
-    }
-    return null;
-  };
 
   return {
     user,

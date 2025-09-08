@@ -17,10 +17,23 @@ export interface RefreshPayload {
   exp: number;
 }
 
-export async function createSession(steamId: string, clientApp?: string) {
+/**
+ * Creates a new session for a user
+ * @param steamId - The Steam ID of the user
+ * @param clientApp - Optional client application identifier
+ * @param replaceExisting - If true, revokes all existing sessions for this user (single session mode)
+ * @returns Object containing sessionId and expiresAt timestamp
+ */
+export async function createSession(steamId: string, clientApp?: string, replaceExisting: boolean = false) {
   const now = Math.floor(Date.now() / 1000);
   const sessionId = randomUUID();
   const expiresAt = now + 7 * 24 * 60 * 60; // 7 days
+
+  // Clean up any existing sessions for this user if requested
+  if (replaceExisting) {
+    console.log(`[createSession] Replacing existing sessions for user: ${steamId}`);
+    await revokeAllUserSessions(steamId);
+  }
 
   // Store session data in Redis
   const sessionData = {
@@ -91,7 +104,32 @@ export async function verifyRefresh(token: string): Promise<RefreshPayload> {
   return payload;
 }
 
+/**
+ * Revokes a specific session and cleans up associated data
+ * @param sessionId - The session ID to revoke
+ */
 export async function revokeSession(sessionId: string) {
+  // Get session data to find the steamId for cleanup
+  const sessionDataRaw = await redis.get(`session:${sessionId}`);
+  if (sessionDataRaw) {
+    let sessionData;
+    if (typeof sessionDataRaw === 'string') {
+      sessionData = JSON.parse(sessionDataRaw);
+    } else {
+      sessionData = sessionDataRaw;
+    }
+    
+    const steamId = sessionData.steamId;
+    if (steamId) {
+      // Remove session ID from user's session set
+      await redis.srem(`user_sessions:${steamId}`, sessionId);
+    }
+  }
+  
+  // Delete the session data
+  await redis.del(`session:${sessionId}`);
+  
+  // Legacy cleanup for token-based sessions
   await redis.del(`refresh:${sessionId}`);
   await redis.del(`sessiondata:${sessionId}`);
 }
@@ -106,6 +144,12 @@ export function verifyAccess(token: string): AccessPayload {
 
 export async function validateSession(sessionId: string): Promise<{ valid: boolean; steamId?: string; sessionData?: any }> {
   try {
+    // Validate session ID format (UUID v4)
+    if (!sessionId || typeof sessionId !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(sessionId)) {
+      console.warn("Invalid session ID format:", sessionId);
+      return { valid: false };
+    }
+    
     const sessionDataRaw = await redis.get(`session:${sessionId}`);
     if (!sessionDataRaw) {
       return { valid: false };
@@ -132,6 +176,9 @@ export async function validateSession(sessionId: string): Promise<{ valid: boole
     await redis.set(`session:${sessionId}`, JSON.stringify(sessionData), {
       ex: 7 * 24 * 60 * 60,
     });
+    
+    // Ensure the session is still in the user sessions set
+    await redis.sadd(`user_sessions:${sessionData.steamId}`, sessionId);
 
     return { valid: true, steamId: sessionData.steamId, sessionData };
   } catch (error) {
@@ -140,6 +187,10 @@ export async function validateSession(sessionId: string): Promise<{ valid: boole
   }
 }
 
+/**
+ * Revokes all sessions for a specific user (useful for "logout from all devices")
+ * @param steamId - The Steam ID of the user
+ */
 export async function revokeAllUserSessions(steamId: string): Promise<void> {
   try {
     const sessionIds = await redis.smembers(`user_sessions:${steamId}`);
@@ -147,11 +198,24 @@ export async function revokeAllUserSessions(steamId: string): Promise<void> {
       const pipeline = redis.pipeline();
       sessionIds.forEach(sessionId => {
         pipeline.del(`session:${sessionId}`);
+        // Also clean up legacy token data
+        pipeline.del(`refresh:${sessionId}`);
+        pipeline.del(`sessiondata:${sessionId}`);
       });
       pipeline.del(`user_sessions:${steamId}`);
       await pipeline.exec();
     }
   } catch (error) {
     console.error("Error revoking user sessions:", error);
+  }
+}
+
+export async function cleanupExpiredSessions(): Promise<void> {
+  try {
+    // This function can be called periodically to clean up expired sessions
+    // For now, we rely on Redis TTL, but this could be enhanced to actively clean up
+    console.log("Session cleanup: Relying on Redis TTL for expired session cleanup");
+  } catch (error) {
+    console.error("Error during session cleanup:", error);
   }
 }

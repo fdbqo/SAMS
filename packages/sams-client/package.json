@@ -1,7 +1,7 @@
 {
   "name": "@finndb/sams-client",
-  "version": "3.0.0",
-  "description": "Official SAMS client SDK for Steam authentication with session-based authentication",
+  "version": "3.2.0",
+  "description": "Official SAMS client SDK for Steam authentication with session-based authentication and enhanced security",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
   "types": "dist/index.d.ts",

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { redis } from "@/lib/upstash";
+import { AuditLogger } from "@/lib/auditLogger";
 
 export async function GET(request: NextRequest) {
   try {
@@ -72,6 +73,13 @@ export async function POST(request: NextRequest) {
     
     // Store metadata
     await redis.set(`origin:${origin}:added_at`, new Date().toISOString());
+
+    // Log the action
+    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+               request.headers.get("x-real-ip")?.trim() ||
+               "unknown";
+    const userAgent = request.headers.get("user-agent");
+    await AuditLogger.logAdminAction("site_added", ip, userAgent, { origin });
 
     return NextResponse.json({ success: true });
   } catch (err: any) {

@@ -89,6 +89,7 @@ export class SamsClient {
 
   /**
    * Verify a token with SAMS instance
+   * @deprecated This method is for legacy token-based authentication. Use session-based authentication instead.
    */
   async verifyToken(token: string): Promise<{ valid: boolean; user?: { steamId: string } }> {
     try {

@@ -1,4 +1,8 @@
 import { redis } from "@/lib/upstash";
+import { randomBytes, scrypt, timingSafeEqual } from "crypto";
+import { promisify } from "util";
+
+const scryptAsync = promisify(scrypt);
 
 const ADMIN_PASSWORD_KEY = "admin:password";
 const ADMIN_SESSION_KEY = "admin:session";
@@ -26,7 +30,12 @@ export class AdminAuth {
         throw new Error("Password must be at least 8 characters long");
       }
       
-      await redis.set(ADMIN_PASSWORD_KEY, password);
+      // Hash the password with salt
+      const salt = randomBytes(16);
+      const hash = await scryptAsync(password, salt, 64) as Buffer;
+      const hashedPassword = salt.toString('hex') + ':' + hash.toString('hex');
+      
+      await redis.set(ADMIN_PASSWORD_KEY, hashedPassword);
       return true;
     } catch (error) {
       console.error("Error setting admin password:", error);
@@ -44,7 +53,21 @@ export class AdminAuth {
         return false;
       }
       
-      return password === storedPassword;
+      // Check if it's the old plain text format (for migration)
+      if (!storedPassword.includes(':')) {
+        // This is a plain text password, migrate it
+        console.warn("Migrating plain text admin password to hashed format");
+        await this.setPassword(password);
+        return true;
+      }
+      
+      // Verify hashed password
+      const [saltHex, hashHex] = storedPassword.split(':');
+      const salt = Buffer.from(saltHex, 'hex');
+      const hash = Buffer.from(hashHex, 'hex');
+      
+      const derivedKey = await scryptAsync(password, salt, 64) as Buffer;
+      return timingSafeEqual(hash, derivedKey);
     } catch (error) {
       console.error("Error verifying admin password:", error);
       return false;
@@ -62,8 +85,8 @@ export class AdminAuth {
         await redis.del(...oldSessionKeys);
       }
 
-      // Create new session
-      const sessionId = `admin_session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      // Create new session with cryptographically secure random ID
+      const sessionId = randomBytes(32).toString('hex');
       await redis.set(`${ADMIN_SESSION_KEY}:${sessionId}`, "admin", { ex: 24 * 60 * 60 }); // 24 hours
       
       return sessionId;

@@ -42,9 +42,19 @@ const handler = async (request: NextRequest) => {
 
     const { steamId } = await SteamClient.verifyCallback(queryObj);
 
+    // Extract client app identifier from origin
+    let clientApp: string;
+    try {
+      clientApp = new URL(origin).hostname;
+    } catch (error) {
+      console.error("[callback] Invalid origin format:", origin);
+      return new NextResponse("Invalid origin format", { status: 400 });
+    }
+
     // Create session instead of tokens
-    const { sessionId, expiresAt } = await createSession(steamId);
+    const { sessionId, expiresAt } = await createSession(steamId, clientApp);
     console.log("[callback] Session created for Steam ID:", steamId);
+    console.log("[callback] Client app:", clientApp);
     console.log("[callback] Session ID:", sessionId);
     console.log("[callback] Expires at:", new Date(expiresAt * 1000).toISOString());
 

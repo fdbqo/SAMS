@@ -2,10 +2,20 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { validateSession } from "@/lib/jwt";
 import { withCORS } from "@/lib/withCors";
+import { rateLimit } from "@/lib/rateLimiter";
 
 const handler = async (request: NextRequest) => {
   try {
     console.log("[session] Request received");
+    
+    // Rate limiting
+    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+               request.headers.get("x-real-ip")?.trim() ||
+               "unknown";
+    const tooMany = await rateLimit(`rl:session:${ip}`, 60, 60); // 60 requests per minute
+    if (tooMany) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
     
     const sessionId = request.nextUrl.searchParams.get('sessionId');
     if (!sessionId) {

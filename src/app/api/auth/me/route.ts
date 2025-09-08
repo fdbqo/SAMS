@@ -7,19 +7,14 @@ import { withCORS } from "@/lib/withCors";
 const handler = async (request: NextRequest) => {
   try {
     console.log("[me] Request received");
-    console.log("[me] Headers:", Object.fromEntries(request.headers.entries()));
-    console.log("[me] Cookies:", Object.fromEntries(request.cookies.getAll().map(c => [c.name, c.value])));
     
     // Try to get token from cookies first, then from Authorization header
     let accessToken = request.cookies.get("sams_access_token")?.value;
-    console.log("[me] Cookie token:", accessToken ? "Found" : "Not found");
     
     if (!accessToken) {
       const authHeader = request.headers.get("authorization");
-      console.log("[me] Auth header:", authHeader ? "Found" : "Not found");
       if (authHeader && authHeader.startsWith("Bearer ")) {
         accessToken = authHeader.substring(7);
-        console.log("[me] Bearer token extracted:", accessToken ? "Yes" : "No");
       }
     }
     
@@ -32,7 +27,7 @@ const handler = async (request: NextRequest) => {
 
     const payload = verifyAccess(accessToken);
     const steamId = payload.steamId;
-    console.log("[me] Token verified, Steam ID:", steamId);
+    console.log("[me] Token verified for Steam ID:", steamId);
 
     const res = await fetch(
       `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${ENV.STEAM_API_KEY}&steamids=${steamId}`
