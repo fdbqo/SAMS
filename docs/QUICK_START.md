@@ -90,6 +90,7 @@ function LoginPage() {
   
   return user ? (
     <div>
+      <img src={user.avatarUrl} alt="Avatar" className="w-8 h-8 rounded-full" />
       <h1>Welcome, {user.displayName}!</h1>
       <button onClick={logout}>Logout</button>
     </div>
@@ -98,6 +99,12 @@ function LoginPage() {
   );
 }
 ```
+
+**That's it!** No additional setup required. The SDK automatically handles:
+- ✅ Authentication cookies
+- ✅ Token refresh
+- ✅ Session management
+- ✅ Cross-domain security
 
 ### Vanilla JavaScript
 ```html
@@ -108,6 +115,17 @@ const client = new SamsClient({
 });
 
 document.getElementById('loginBtn').onclick = () => client.login();
+
+// Check if user is logged in
+client.getUser().then(user => {
+  if (user) {
+    console.log('Welcome,', user.displayName);
+    document.getElementById('userInfo').innerHTML = `
+      <img src="${user.avatarUrl}" alt="Avatar" style="width: 32px; height: 32px; border-radius: 50%;">
+      <span>${user.displayName}</span>
+    `;
+  }
+});
 </script>
 ```
 
@@ -124,10 +142,16 @@ document.getElementById('loginBtn').onclick = () => client.login();
 
 **"Origin not allowed" error**
 - Add your domain to allowed origins in admin dashboard
+- Ensure your domain is added to the SAMS admin panel
 
 **"Steam login failed"**
 - Check your Steam API key and domain configuration
-- Ensure return URL matches exactly
+- Ensure return URL matches exactly in Steam developer console
+
+**"Authentication cookies not working"**
+- Verify your domain is added to allowed origins
+- Check that your SAMS instance is deployed and accessible
+- Ensure you're using HTTPS in production
 
 **"Redis connection failed"**
 - Verify your Upstash credentials

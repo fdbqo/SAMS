@@ -44,14 +44,32 @@ const handler = async (request: NextRequest) => {
 
     const { accessToken, refreshToken } = await issueTokens(steamId);
 
-    // Always redirect to /api/auth/set-cookies on the frontend, passing tokens and final destination
-    const redirectUrl =
-      `${origin}/api/auth/set-cookies` +
-      `?access=${encodeURIComponent(accessToken)}` +
-      `&refresh=${encodeURIComponent(refreshToken)}` +
-      `&redirectTo=${encodeURIComponent(redirectTo)}`;
+    // Set cookies directly and redirect to the app
+    const response = NextResponse.redirect(`${origin}${redirectTo}`);
 
-    return NextResponse.redirect(redirectUrl);
+    // Extract domain from origin for cookie setting
+    const targetDomain = new URL(origin).hostname;
+
+    // Set cookies for the target domain
+    response.cookies.set('sams_access_token', accessToken, {
+      domain: targetDomain,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 15 * 60, // 15 minutes
+      path: '/',
+    });
+
+    response.cookies.set('sams_refresh_token', refreshToken, {
+      domain: targetDomain,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60, // 7 days
+      path: '/',
+    });
+
+    return response;
   } catch (err: any) {
     console.error("Callback error:", err);
     return new NextResponse("Authentication failed", { status: 500 });

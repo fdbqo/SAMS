@@ -10,11 +10,22 @@ export function useSteamUser() {
   const fetchUser = useCallback(async () => {
     try {
       setLoading(true);
+      
+      // Try to get access token from cookies first
+      const accessToken = getCookie('sams_access_token');
+      
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+
+      // If we have an access token, use it for authorization
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
+      }
+
       const response = await fetch(`${config.samsUrl}/api/auth/me`, {
         credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json'
-        }
+        headers
       });
 
       if (response.ok) {
@@ -30,6 +41,18 @@ export function useSteamUser() {
       setLoading(false);
     }
   }, [config.samsUrl]);
+
+  // Helper function to get cookie value
+  const getCookie = (name: string): string | null => {
+    if (typeof document === 'undefined') return null;
+    
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) {
+      return parts.pop()?.split(';').shift() || null;
+    }
+    return null;
+  };
 
   useEffect(() => {
     fetchUser();

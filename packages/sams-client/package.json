@@ -1,7 +1,7 @@
 {
   "name": "@finndb/sams-client",
-  "version": "1.0.0",
-  "description": "Official SAMS client SDK for Steam authentication",
+  "version": "2.0.0",
+  "description": "Official SAMS client SDK for Steam authentication with automatic cookie management",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
   "types": "dist/index.d.ts",
