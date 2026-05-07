@@ -4,7 +4,8 @@
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/fdbqo/SAMS)
 
-## ⚡ TLDR - Get Running in 5 Minutes
+## ⚡ TLDR - Get Running in 5 Minutes 
+- this guide is AI generated, but steps have been verified by dev
 
 ```bash
 # 1. Clone and install
